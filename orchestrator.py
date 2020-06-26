@@ -2,7 +2,7 @@ import time
 
 import pika
 
-max_messages_fetch = 50
+max_messages_fetch = 1000
 
 org_threshold = {
     "queue_org_1": 1000,
@@ -61,10 +61,10 @@ def monitor_org_queues():
 
         count = queue_length(connection, queue_name)
 
-        if count > org_threshold[queue_name]:
-            if queue_messages_fetch[queue_name]+10 < max_messages_fetch:
-                print ("Changing messages prefetch Q - %s, From: %s - To: %s " %(queue_name, queue_messages_fetch[queue_name], queue_messages_fetch[queue_name]+10))
-                queue_messages_fetch[queue_name] += 10
+        if count > org_threshold[queue_name] and queue_messages_fetch[queue_name]+10 < max_messages_fetch:
+            print ("Changing messages prefetch Q - %s, From: %s - To: %s " %(queue_name, queue_messages_fetch[queue_name], queue_messages_fetch[queue_name]+10))
+            queue_messages_fetch[queue_name] += 50
+
 
 # Starvation -
 #
@@ -77,9 +77,6 @@ def pull_message_from_queue(q_name):
     global messages
     counter = 0
     threshold = queue_messages_fetch[q_name]
-
-    import pdb;
-    # pdb.set_trace()
 
     for method, properties, body in channel.consume(q_name):
         counter += 1
@@ -109,7 +106,7 @@ def move_messages_to_common_bus():
 while True:
     monitor_org_queues()
     move_messages_to_common_bus()
-    time.sleep(5)
+    time.sleep(1)
 
 
 
